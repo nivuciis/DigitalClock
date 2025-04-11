@@ -1,0 +1,35 @@
+<ASSEMBLER_INFO>
+ <VERSION>2.2.8</VERSION>
+ <DEVICE>"ATmega328P"</DEVICE>
+ <WORKING_DIR>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\Debug</WORKING_DIR>
+ <INCLUDE_PATH>
+  <DIR>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc</DIR>
+  <DIR>C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avrassembler\Include</DIR>
+  <DIR></DIR>
+ </INCLUDE_PATH>
+ <SOURCE_FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</SOURCE_FILE>
+ <INCLUDED_FILES>
+  <FILE>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc</FILE>
+ </INCLUDED_FILES>
+ <OBJECT_FILES>
+  <FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\Debug\DigitalClock.obj</FILE>
+ </OBJECT_FILES>
+ <HEX_FILES>
+  <FILE>DigitalClock.hex</FILE>
+ </HEX_FILES>
+ <OUTPUT_FILES>
+  <FILE>DigitalClock.map</FILE>
+  <FILE>DigitalClock.lss</FILE>
+ </OUTPUT_FILES>
+ <LABELS>
+  <STATE_TABLE><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>11</LINE></STATE_TABLE>
+  <INITIAL_STATE><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>32</LINE></INITIAL_STATE>
+  <PRE_TWO><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>37</LINE></PRE_TWO>
+  <CRON_STOP><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>45</LINE></CRON_STOP>
+  <transition><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>16</LINE></transition>
+  <reset><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>29</LINE></reset>
+  <main><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>54</LINE></main>
+  <CRON_RUN><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>41</LINE></CRON_RUN>
+  <BLINK><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>49</LINE></BLINK>
+ </LABELS>
+</ASSEMBLER_INFO>
