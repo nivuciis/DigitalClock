@@ -2,13 +2,13 @@
 ; DigitalClock.asm
 ;
 ; 
-;Author: Paulo Roberto / Rita de Kassia / Vinicius Rafael
+;Authors: Paulo Roberto / Rita de Kassia / Vinicius Rafael
 
 
 
 ;Definições de clock
 #define CLOCK 16.0e6 ;clock speed
-#define DELAY 0.01 ;seconds
+#define DELAY 1 ;seconds
 .equ PRESCALE = 0b100 ;/256 prescale
 .equ PRESCALE_DIV = 256
 .equ WGM = 0b0100
@@ -16,20 +16,34 @@
 .if TOP > 65535
 .error "TOP is out of range"
 .endif
-;
-; Created: 10/04/2025 18:13:31
-; Author : rita / paulo
-;
 
-STATE_TABLE:
-    .dw state0_operation ,state1_operation ,state2_operation
+.dseg 
+current_digit: .byte 1
+HOUR: .byte 2
+MINUTES: .byte 2
+.cseg
+.org 0x0000
+		rjmp reset
+.org 0x0016        ; Timer1 Compare A interrupt vector
+    rjmp TIMER1_COMPA_ISR ; Timer dos segundos
+
+STATE_TABLE: ;Armazena o local em que os estados estão alocados
+    .dw state0_operation ,state1_operation ,CRON_RUN
 	.dw state3_operation ,state4_operation ,state5_operation 
 	.dw state6_operation  ,state7_operation 
 
+DIGITS_TABLE: ;Armazena os caracteres 0-9 em forma binaria
+	.db 0b00111111, 0b00000110  ; 0, 1
+    .db 0b01011011, 0b01001111  ; 2, 3
+    .db 0b01100110, 0b01101101  ; 4, 5
+    .db 0b01111101, 0b00000111  ; 6, 7
+    .db 0b01111111, 0b01101111  ; 8, 9
 
 .def current_state = r16
 .def temp = r17
 .def stack_reg = r18
+.def mosfet = r19
+;Utilizamos isto aqui para comparar em qual estado se encontra o current_state
 
 .equ state0 = 0   ; MODO 1 – Relógio (contagem normal de tempo MM:SS)
 .equ state1 = 1   ; MODO 2 – PRE 2 (cronômetro parado, resetado)
@@ -41,6 +55,10 @@ STATE_TABLE:
 .equ state7 = 7   ; MODO 3 – SELECT INC (incrementa o dígito selecionado)
 
 
+
+
+
+
 reset:
 	;Inicialização de stack
 	ldi stack_reg, low(RAMEND)
@@ -49,44 +67,45 @@ reset:
 	out SPH, stack_reg
 	;Definindo o estado atual para o primeiro estado na tabela
 	ldi current_state, 0
-	out DDRB, current_state
+	ser temp
+	out DDRC, temp ; seta a porta C como saida
+	out DDRB, temp ; porta B também pra jogar nos mosfets
+	clr temp 
 
-	;Inicializações de timer
-	ldi stack_reg, high(TOP) ;initialize compare value (TOP)
-	sts OCR1AH, stack_reg
-	ldi stack_reg, low(TOP)
-	sts OCR1AL, stack_reg
-	ldi stack_reg, ((WGM&0b11) << WGM10) ;lower 2 bits of WGM
-	; WGM&0b11 = 0b0100 & 0b0011 = 0b0000 
-	sts TCCR1A, stack_reg
-	;upper 2 bits of WGM and clock select
-	ldi stack_reg, ((WGM>> 2) << WGM12)|(PRESCALE << CS10)
-	; WGM >> 2 = 0b0100 >> 2 = 0b0001
-	; (WGM >> 2) << WGM12 = (0b0001 << 3) = 0b0001000
-	; (PRESCALE << CS10) = 0b100 << 0 = 0b100
-	; 0b0001000 | 0b100 = 0b0001100
-
-	sts TCCR1B, stack_reg ;start counter
-
-	sei
+	sei ; Habilitar interrupções
 	call transition ;Pula direto para o estado de transição
 
 main:
-	in stack_reg, TIFR1 ;request status from timers
-	andi stack_reg, 1<<OCF1A ;isolate only timer 1's match
-	; 0b1 << OCF1A = 0b1 << 1 = 0b00000010
-	; andi --> 1 (OCF1A é um)	--> overflow
-	; andi --> 0 (OCF1A é zero)	--> contando
-	breq skipoverflow ;skip overflow handler
-	;match handler - done once every DELAY seconds
-	ldi stack_reg, 1<<OCF1A ;write a 1 to clear the flag
-	out TIFR1, stack_reg
 	rjmp main
 
+setup_timer:
+    ldi r16, (1 << WGM12) | (1 << CS12)  ; CTC mode, prescaler=256
 
-overflow:
-	nop
-	rjmp main
+    sts TCCR1B, r16
+    ldi r16, high(TOP)                  ; Delay de 1s @ 16MHz
+    sts OCR1AH, r16
+    ldi r16, low(TOP)
+    sts OCR1AL, r16	
+    ldi r16, (1 << OCIE1A)               ; Habilita a interrupção do timer 1
+    sts TIMSK1, r16
+	ser mosfet
+	out PORTB, mosfet
+    ret
+
+
+; --- Timer1 interrupt handler ---
+TIMER1_COMPA_ISR:
+    push r16
+    lds r16, current_digit
+    inc r16
+    cpi r16, 10
+    brlo save_digit
+    clr r16                   ; Volta para o 0 depois de 9
+	save_digit:
+		sts current_digit, r16
+		pop r16
+		reti
+
 irq:
 	push temp
 	in temp, sreg
@@ -213,6 +232,19 @@ current_pc_reset:
 		pop temp
 		reti
 
+;Sempre utilizar o sts current_digit, r16 para pegar o valor do digito atual
+update_display:
+	ldi ZL, low(DIGITS_TABLE << 1)  
+    ldi ZH, high(DIGITS_TABLE << 1)
+    lds r16, current_digit
+    add ZL, r16                  ; Add offset 
+    clr r17
+    adc ZH, r17                  
+    lpm r16, Z                   
+    out PORTC, r16               ; Envia para o display
+    ret
+
+
 transition:
 	ldi ZL, LOW(STATE_TABLE<<1)
 	ldi ZH, HIGH(STATE_TABLE<<1)
@@ -229,10 +261,7 @@ transition:
 state0_operation:
     cpi current_state, state0
     brne transition ; se NÃO for o estado 0, pula pra transition
-
-	; lógica
-
-    rjmp state0_operation
+	rjmp state0_operation
 
 state1_operation:
     cpi current_state, state1
@@ -242,13 +271,22 @@ state1_operation:
 
     rjmp state1_operation
 
-state2_operation:
+CRON_RUN:
     cpi current_state, state2
     brne transition 
+	call setup_timer;Faz as definições de timer
+	; lógica
+
+    rjmp cron_run_timer_loop
+	
+
+	cron_run_timer_loop:
+		rcall update_display
+		rjmp cron_run_timer_loop
 
 	; lógica
 
-    rjmp state2_operation
+    rjmp CRON_RUN
 
 state3_operation:
     cpi current_state, state3
@@ -296,3 +334,22 @@ state7_operation:
     sei
     rjmp main
 
+inc_timer:
+	push temp
+	in temp, sreg
+	push temp
+	; pegar o valor de pc para somar o valor do estado atual e fazer a transição
+	call current_pc_timer
+	current_pc_timer:
+		pop ZH
+		pop ZL
+	ldi temp, 10
+	lsl current_state ; garante que vai pular +1 instrução (rjmp exit_irq)
+	add temp, current_state 
+	lsr current_state ; retorna o valor original de current_state 
+	add ZL, temp
+	clr temp
+	adc ZH, temp
+	; pula pro valor de PC + o estado atual
+	ijmp
+	
