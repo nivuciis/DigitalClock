@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.2.8  c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm Thu Apr 10 19:28:26 2025
+AVRASM ver. 2.2.8  C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm Sat Apr 12 19:43:51 2025
 
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc'
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc'
@@ -988,59 +988,290 @@ AVRASM ver. 2.2.8  c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\Digita
                                  ; DigitalClock.asm
                                  ;
                                  ; 
+                                 ;Author: Paulo Roberto / Rita de Kassia / Vinicius Rafael
+                                 
+                                 
+                                 
+                                 ;Definições de clock
+                                 #define CLOCK 16.0e6 ;clock speed
+                                 #define DELAY 0.01 ;seconds
+                                 .equ PRESCALE = 0b100 ;/256 prescale
+                                 .equ PRESCALE_DIV = 256
+                                 .equ WGM = 0b0100
+                                 .equ TOP = int(0.5 + ((CLOCK/PRESCALE_DIV)*DELAY))
+                                 .if TOP > 65535
+                                 .endif
+                                 ;
+                                 ; Created: 10/04/2025 18:13:31
+                                 ; Author : rita / paulo
                                  ;
                                  
+                                 STATE_TABLE:
+000000 0092
+000001 0095
+000002 0098                          .dw state0_operation ,state1_operation ,state2_operation
+000003 009b
+000004 009e
+000005 00a2                      	.dw state3_operation ,state4_operation ,state5_operation 
+000006 00a5
+000007 00a9                      	.dw state6_operation  ,state7_operation 
                                  
-                                 ; Replace with your application code
                                  
-                                 
-000000 0010
-000001 0011
-000002 0013                      STATE_TABLE : .dw INITIAL_STATE, PRE_TWO, CRON_STOP
                                  .def current_state = r16
                                  .def temp = r17
-000003 2711                      clr temp
-000004 e002                      LDI R16, 2
-                                 transition:
-000005 e0e0                      	ldi ZL, LOW(STATE_TABLE)
-000006 e0f0                      	ldi ZH, HIGH(STATE_TABLE)
-000007 0f00                      	lsl current_state
-000008 0fe0                      	add ZL, current_state
-000009 9506                      	lsr current_state
-00000a 1ff1                      	adc ZH, temp
-00000b 9005                      	lpm R0, Z+
-00000c 9014                      	lpm R1, Z
-00000d 01f0                      	movw ZL, R0
-00000e 9409                      	ijmp
+                                 .def stack_reg = r18
+                                 
+                                 .equ state0 = 0   ; MODO 1 – Relógio (contagem normal de tempo MM:SS)
+                                 .equ state1 = 1   ; MODO 2 – PRE 2 (cronômetro parado, resetado)
+                                 .equ state2 = 2   ; MODO 2 – CRON RUN (cronômetro em contagem)
+                                 .equ state3 = 3   ; MODO 2 – CRON STOP (cronômetro pausado)
+                                 .equ state4 = 4   ; MODO 3 – PRE 3 (pré-ajuste de hora, entrada no modo de ajuste)
+                                 .equ state5 = 5   ; MODO 3 – BLINK (pisca o dígito selecionado)
+                                 .equ state6 = 6   ; MODO 3 – MOV SELECT (muda qual dígito está sendo ajustado)
+                                 .equ state7 = 7   ; MODO 3 – SELECT INC (incrementa o dígito selecionado)
                                  
                                  
                                  reset:
-00000f c005                      	rjmp main
+                                 	;Inicialização de stack
+000008 ef2f                      	ldi stack_reg, low(RAMEND)
+000009 bf2d                      	out SPL, stack_reg
+00000a e028                      	ldi stack_reg, high(RAMEND)
+00000b bf2e                      	out SPH, stack_reg
+                                 	;Definindo o estado atual para o primeiro estado na tabela
+00000c e000                      	ldi current_state, 0
+00000d b904                      	out DDRB, current_state
                                  
-                                 INITIAL_STATE:
+                                 	;Inicializações de timer
+00000e e022                      	ldi stack_reg, high(TOP) ;initialize compare value (TOP)
+00000f 9320 0089                 	sts OCR1AH, stack_reg
+000011 e721                      	ldi stack_reg, low(TOP)
+000012 9320 0088                 	sts OCR1AL, stack_reg
+000014 e020                      	ldi stack_reg, ((WGM&0b11) << WGM10) ;lower 2 bits of WGM
+                                 	; WGM&0b11 = 0b0100 & 0b0011 = 0b0000 
+000015 9320 0080                 	sts TCCR1A, stack_reg
+                                 	;upper 2 bits of WGM and clock select
+000017 e02c                      	ldi stack_reg, ((WGM>> 2) << WGM12)|(PRESCALE << CS10)
+                                 	; WGM >> 2 = 0b0100 >> 2 = 0b0001
+                                 	; (WGM >> 2) << WGM12 = (0b0001 << 3) = 0b0001000
+                                 	; (PRESCALE << CS10) = 0b100 << 0 = 0b100
+                                 	; 0b0001000 | 0b100 = 0b0001100
                                  
+000018 9320 0081                 	sts TCCR1B, stack_reg ;start counter
                                  
-                                 
-000010 cfff                      	rjmp INITIAL_STATE
-                                 PRE_TWO:
-                                 
-000011 cfff                      	rjmp PRE_TWO
-                                 
-                                 CRON_RUN:
-                                 
-000012 cfff                      	rjmp CRON_RUN
-                                 
-                                 CRON_STOP:
-                                 
-000013 cfff                      	rjmp CRON_STOP
-                                 
-                                 BLINK:
-                                 
-000014 cfff                      	rjmp BLINK
-                                 
+00001a 9478                      	sei
+00001b 940e 0087                 	call transition ;Pula direto para o estado de transição
                                  
                                  main:
-000015 cfff                      	RJMP MAIN
+00001d cfff                      	rjmp main
+                                 
+                                 irq:
+00001e 931f                      	push temp
+00001f b71f                      	in temp, sreg
+000020 931f                      	push temp
+                                 	; pegar o valor de pc para somar o valor do estado atual e fazer a transição
+000021 940e 0023                 	call current_pc 
+                                 	current_pc:
+000023 91ff                      		pop ZH
+000024 91ef                      		pop ZL
+000025 e01a                      	ldi temp, 10
+000026 0f00                      	lsl current_state ; garante que vai pular +1 instrução (rjmp exit_irq)
+000027 0f10                      	add temp, current_state 
+000028 9506                      	lsr current_state ; retorna o valor original de current_state 
+000029 0fe1                      	add ZL, temp
+00002a 2711                      	clr temp
+00002b 1ff1                      	adc ZH, temp
+                                 	; pula pro valor de PC + o estado atual
+00002c 9409                      	ijmp
+00002d e001                      	case_state0: ldi current_state, state1
+00002e c00e                      		rjmp exit_irq
+00002f e004                      	case_state1: ldi current_state, state4
+000030 c00c                      		rjmp exit_irq
+000031 e004                      	case_state2: ldi current_state, state4
+000032 c00a                      		rjmp exit_irq
+000033 e004                      	case_state3: ldi current_state, state4
+000034 c008                      		rjmp exit_irq
+000035 e000                      	case_state4: ldi current_state, state0
+000036 c006                      		rjmp exit_irq
+000037 e000                      	case_state5: ldi current_state, state0
+000038 c004                      		rjmp exit_irq
+000039 e000                      	case_state6: ldi current_state, state0
+00003a c002                      		rjmp exit_irq
+00003b e000                      	case_state7: ldi current_state, state0
+00003c c000                      		rjmp exit_irq
+                                 
+                                 	exit_irq:
+00003d 911f                      		pop temp
+00003e bf1f                      		out sreg, temp
+00003f 911f                      		pop temp
+000040 9518                      		reti
+                                 
+                                 ; interrupção para quando apertar "START"
+                                 irq_start:
+000041 931f                      	push temp
+000042 b71f                      	in temp, sreg
+000043 931f                      	push temp
+                                 	; pegar o valor de pc para somar o valor do estado atual e fazer a transição
+000044 940e 0046                 	call current_pc_start
+                                 	current_pc_start:
+000046 91ff                      		pop ZH
+000047 91ef                      		pop ZL
+000048 e01a                      	ldi temp, 10
+000049 0f00                      	lsl current_state ; garante que vai pular +1 instrução (rjmp exit_irq)
+00004a 0f10                      	add temp, current_state 
+00004b 9506                      	lsr current_state ; retorna o valor original de current_state 
+00004c 0fe1                      	add ZL, temp
+00004d 2711                      	clr temp
+00004e 1ff1                      	adc ZH, temp
+                                 	; pula pro valor de PC + o estado atual
+00004f 9409                      	ijmp
+000050 e000                      	case_state0_start: ldi current_state, state0
+000051 c00e                      		rjmp exit_irq_start
+000052 e002                      	case_state1_start: ldi current_state, state2
+000053 c00c                      		rjmp exit_irq_start
+000054 e003                      	case_state2_start: ldi current_state, state3
+000055 c00a                      		rjmp exit_irq_start
+000056 e002                      	case_state3_start: ldi current_state, state2
+000057 c008                      		rjmp exit_irq_start
+000058 e004                      	case_state4_start: ldi current_state, state4
+000059 c006                      		rjmp exit_irq_start
+00005a e006                      	case_state5_start: ldi current_state, state6
+00005b c004                      		rjmp exit_irq_start
+00005c e006                      	case_state6_start: ldi current_state, state6
+00005d c002                      		rjmp exit_irq_start
+00005e e007                      	case_state7_start: ldi current_state, state7
+00005f c000                      		rjmp exit_irq_start
+                                 
+                                 	exit_irq_start:
+000060 911f                      		pop temp
+000061 bf1f                      		out sreg, temp
+000062 911f                      		pop temp
+000063 9518                      		reti
+                                 
+                                 ; interrupção para quando apertar "RESET"
+                                 irq_reset:
+000064 931f                          push temp
+000065 b71f                          in temp, sreg
+000066 931f                          push temp
+                                 
+000067 940e 0069                     call current_pc_reset
+                                 current_pc_reset:
+000069 91ff                          pop ZH
+00006a 91ef                          pop ZL
+00006b e01a                          ldi temp, 10               
+00006c 0f00                          lsl current_state          
+00006d 0f10                          add temp, current_state
+00006e 9506                          lsr current_state          
+00006f 0fe1                          add ZL, temp
+000070 2711                          clr temp
+000071 1ff1                          adc ZH, temp
+000072 9409                          ijmp
+                                 
+                                 	; transições ao apertar RESET
+000073 e000                      	case_reset_state0: ldi current_state, state0 ; MODO 1, não faz nada
+000074 c00e                      		rjmp exit_irq_reset
+000075 e001                      	case_reset_state1: ldi current_state, state1 ; PRE 2, não faz nada
+000076 c00c                      		rjmp exit_irq_reset
+000077 e002                      	case_reset_state2: ldi current_state, state2 ; CRON RUN, não faz nada
+000078 c00a                      		rjmp exit_irq_reset
+000079 e001                      	case_reset_state3: ldi current_state, state1; CRON STOP, volta pra PRE 2
+00007a c008                      		rjmp exit_irq_reset
+00007b e004                      	case_reset_state4: ldi current_state, state4 ; PRE 3, não faz nada
+00007c c006                      		rjmp exit_irq_reset
+00007d e007                      	case_reset_state5: ldi current_state, state7 ; BLINK vai pra SELECT INC
+00007e c004                      		rjmp exit_irq_reset
+00007f e006                      	case_reset_state6: ldi current_state, state6 ; MOV SELECT, não faz nada
+000080 c002                      		rjmp exit_irq_reset
+000081 e007                      	case_reset_state7: ldi current_state, state7 ; SELECT INC, não faz nada (transição automática)
+000082 c000                      		rjmp exit_irq_reset
+                                 
+                                 	exit_irq_reset:
+000083 911f                      		pop temp
+000084 bf1f                      		out sreg, temp
+000085 911f                      		pop temp
+000086 9518                      		reti
+                                 
+                                 transition:
+000087 e0e0                      	ldi ZL, LOW(STATE_TABLE<<1)
+000088 e0f0                      	ldi ZH, HIGH(STATE_TABLE<<1)
+000089 0f00                      	lsl current_state
+00008a 0fe0                      	add ZL, current_state
+00008b 9506                      	lsr current_state
+00008c 2711                      	clr temp
+00008d 1ff1                      	adc ZH, temp
+00008e 9005                      	lpm R0, Z+
+00008f 9014                      	lpm R1, Z	
+000090 01f0                      	movw ZL, R0
+000091 9409                      	ijmp
+                                 
+                                 state0_operation:
+000092 3000                          cpi current_state, state0
+000093 f799                          brne transition ; se NÃO for o estado 0, pula pra transition
+                                 
+                                 	; lógica
+                                 
+000094 cffd                          rjmp state0_operation
+                                 
+                                 state1_operation:
+000095 3001                          cpi current_state, state1
+000096 f781                          brne transition 
+                                 
+                                 	; lógica
+                                 
+000097 cffd                          rjmp state1_operation
+                                 
+                                 state2_operation:
+000098 3002                          cpi current_state, state2
+000099 f769                          brne transition 
+                                 
+                                 	; lógica
+                                 
+00009a cffd                          rjmp state2_operation
+                                 
+                                 state3_operation:
+00009b 3003                          cpi current_state, state3
+00009c f751                          brne transition 
+                                 
+                                 	; lógica
+                                 
+00009d cffd                          rjmp state3_operation
+                                 
+                                 state4_operation:
+                                     ; desabilita interrupções
+00009e 94f8                          cli
+                                     
+                                     ; logica
+                                 
+00009f e005                          ldi current_state, state5
+0000a0 9478                          sei
+0000a1 cf7b                          rjmp main
+                                 
+                                 state5_operation:
+0000a2 3005                          cpi current_state, state5
+0000a3 f719                          brne transition 
+                                 
+                                 	; lógica
+                                 
+0000a4 cffd                          rjmp state5_operation
+                                 
+                                 state6_operation:
+                                     ; desabilita interrupções
+0000a5 94f8                          cli
+                                     
+                                     ; logica
+                                 
+0000a6 e005                          ldi current_state, state5
+0000a7 9478                          sei
+0000a8 cf74                          rjmp main
+                                 
+                                 state7_operation:
+                                     ; desabilita interrupções
+0000a9 94f8                          cli
+                                     
+                                     ; logica
+                                 
+0000aa e005                          ldi current_state, state5
+0000ab 9478                          sei
+0000ac cf70                          rjmp main
 
 
 RESOURCE USE INFORMATION
@@ -1060,37 +1291,37 @@ counted separately from r26..r31 here.
 "ATmega328P" register use summary:
 x  :   0 y  :   0 z  :   2 r0 :   2 r1 :   1 r2 :   0 r3 :   0 r4 :   0 
 r5 :   0 r6 :   0 r7 :   0 r8 :   0 r9 :   0 r10:   0 r11:   0 r12:   0 
-r13:   0 r14:   0 r15:   0 r16:   4 r17:   2 r18:   0 r19:   0 r20:   0 
+r13:   0 r14:   0 r15:   0 r16:  46 r17:  35 r18:  12 r19:   0 r20:   0 
 r21:   0 r22:   0 r23:   0 r24:   0 r25:   0 r26:   0 r27:   0 r28:   0 
-r29:   0 r30:   3 r31:   2 
-Registers used: 7 out of 35 (20.0%)
+r29:   0 r30:   9 r31:   8 
+Registers used: 8 out of 35 (22.9%)
 
 "ATmega328P" instruction use summary:
-.lds  :   0 .sts  :   0 adc   :   1 add   :   1 adiw  :   0 and   :   0 
+.lds  :   0 .sts  :   0 adc   :   4 add   :   7 adiw  :   0 and   :   0 
 andi  :   0 asr   :   0 bclr  :   0 bld   :   0 brbc  :   0 brbs  :   0 
 brcc  :   0 brcs  :   0 break :   0 breq  :   0 brge  :   0 brhc  :   0 
 brhs  :   0 brid  :   0 brie  :   0 brlo  :   0 brlt  :   0 brmi  :   0 
-brne  :   0 brpl  :   0 brsh  :   0 brtc  :   0 brts  :   0 brvc  :   0 
-brvs  :   0 bset  :   0 bst   :   0 call  :   0 cbi   :   0 cbr   :   0 
-clc   :   0 clh   :   0 cli   :   0 cln   :   0 clr   :   1 cls   :   0 
+brne  :   5 brpl  :   0 brsh  :   0 brtc  :   0 brts  :   0 brvc  :   0 
+brvs  :   0 bset  :   0 bst   :   0 call  :   4 cbi   :   0 cbr   :   0 
+clc   :   0 clh   :   0 cli   :   3 cln   :   0 clr   :   4 cls   :   0 
 clt   :   0 clv   :   0 clz   :   0 com   :   0 cp    :   0 cpc   :   0 
-cpi   :   0 cpse  :   0 dec   :   0 eor   :   0 fmul  :   0 fmuls :   0 
-fmulsu:   0 icall :   0 ijmp  :   1 in    :   0 inc   :   0 jmp   :   0 
-ld    :   0 ldd   :   0 ldi   :   3 lds   :   0 lpm   :   3 lsl   :   1 
-lsr   :   1 mov   :   0 movw  :   1 mul   :   0 muls  :   0 mulsu :   0 
-neg   :   0 nop   :   0 or    :   0 ori   :   0 out   :   0 pop   :   0 
-push  :   0 rcall :   0 ret   :   0 reti  :   0 rjmp  :   7 rol   :   0 
+cpi   :   5 cpse  :   0 dec   :   0 eor   :   0 fmul  :   0 fmuls :   0 
+fmulsu:   0 icall :   0 ijmp  :   4 in    :   3 inc   :   0 jmp   :   0 
+ld    :   0 ldd   :   0 ldi   :  39 lds   :   0 lpm   :   3 lsl   :   4 
+lsr   :   4 mov   :   0 movw  :   1 mul   :   0 muls  :   0 mulsu :   0 
+neg   :   0 nop   :   0 or    :   0 ori   :   0 out   :   6 pop   :  12 
+push  :   6 rcall :   0 ret   :   0 reti  :   3 rjmp  :  33 rol   :   0 
 ror   :   0 sbc   :   0 sbci  :   0 sbi   :   0 sbic  :   0 sbis  :   0 
 sbiw  :   0 sbr   :   0 sbrc  :   0 sbrs  :   0 sec   :   0 seh   :   0 
-sei   :   0 sen   :   0 ser   :   0 ses   :   0 set   :   0 sev   :   0 
-sez   :   0 sleep :   0 spm   :   0 st    :   0 std   :   0 sts   :   0 
+sei   :   4 sen   :   0 ser   :   0 ses   :   0 set   :   0 sev   :   0 
+sez   :   0 sleep :   0 spm   :   0 st    :   0 std   :   0 sts   :   4 
 sub   :   0 subi  :   0 swap  :   0 tst   :   0 wdr   :   0 
-Instructions used: 10 out of 113 (8.8%)
+Instructions used: 21 out of 113 (18.6%)
 
 "ATmega328P" memory use summary [bytes]:
 Segment   Begin    End      Code   Data   Used    Size   Use%
 ---------------------------------------------------------------
-[.cseg] 0x000000 0x00002c     38      6     44   32768   0.1%
+[.cseg] 0x000000 0x00015a    330     16    346   32768   1.1%
 [.dseg] 0x000100 0x000100      0      0      0    2048   0.0%
 [.eseg] 0x000000 0x000000      0      0      0    1024   0.0%
 

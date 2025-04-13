@@ -1,18 +1,18 @@
 <ASSEMBLER_INFO>
  <VERSION>2.2.8</VERSION>
  <DEVICE>"ATmega328P"</DEVICE>
- <WORKING_DIR>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\Debug</WORKING_DIR>
+ <WORKING_DIR>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\Debug</WORKING_DIR>
  <INCLUDE_PATH>
   <DIR>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc</DIR>
   <DIR>C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avrassembler\Include</DIR>
   <DIR></DIR>
  </INCLUDE_PATH>
- <SOURCE_FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</SOURCE_FILE>
+ <SOURCE_FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</SOURCE_FILE>
  <INCLUDED_FILES>
   <FILE>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc</FILE>
  </INCLUDED_FILES>
  <OBJECT_FILES>
-  <FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\Debug\DigitalClock.obj</FILE>
+  <FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\Debug\DigitalClock.obj</FILE>
  </OBJECT_FILES>
  <HEX_FILES>
   <FILE>DigitalClock.hex</FILE>
@@ -22,14 +22,50 @@
   <FILE>DigitalClock.lss</FILE>
  </OUTPUT_FILES>
  <LABELS>
-  <STATE_TABLE><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>11</LINE></STATE_TABLE>
-  <INITIAL_STATE><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>32</LINE></INITIAL_STATE>
-  <PRE_TWO><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>37</LINE></PRE_TWO>
-  <CRON_STOP><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>45</LINE></CRON_STOP>
-  <transition><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>16</LINE></transition>
-  <reset><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>29</LINE></reset>
-  <main><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>54</LINE></main>
-  <CRON_RUN><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>41</LINE></CRON_RUN>
-  <BLINK><FILE>c:\users\vinic\Documents\Atmel Studio\7.0\DigitalClock\DigitalClock\main.asm</FILE><LINE>49</LINE></BLINK>
+  <STATE_TABLE><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>24</LINE></STATE_TABLE>
+  <state0_operation><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>216</LINE></state0_operation>
+  <state1_operation><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>224</LINE></state1_operation>
+  <state2_operation><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>232</LINE></state2_operation>
+  <state3_operation><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>240</LINE></state3_operation>
+  <state4_operation><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>248</LINE></state4_operation>
+  <state5_operation><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>258</LINE></state5_operation>
+  <state6_operation><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>266</LINE></state6_operation>
+  <state7_operation><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>276</LINE></state7_operation>
+  <reset><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>44</LINE></reset>
+  <transition><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>203</LINE></transition>
+  <main><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>74</LINE></main>
+  <irq><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>77</LINE></irq>
+  <current_pc><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>83</LINE></current_pc>
+  <case_state0><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>95</LINE></case_state0>
+  <exit_irq><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>112</LINE></exit_irq>
+  <case_state1><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>97</LINE></case_state1>
+  <case_state2><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>99</LINE></case_state2>
+  <case_state3><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>101</LINE></case_state3>
+  <case_state4><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>103</LINE></case_state4>
+  <case_state5><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>105</LINE></case_state5>
+  <case_state6><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>107</LINE></case_state6>
+  <case_state7><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>109</LINE></case_state7>
+  <irq_start><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>119</LINE></irq_start>
+  <current_pc_start><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>125</LINE></current_pc_start>
+  <case_state0_start><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>137</LINE></case_state0_start>
+  <exit_irq_start><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>154</LINE></exit_irq_start>
+  <case_state1_start><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>139</LINE></case_state1_start>
+  <case_state2_start><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>141</LINE></case_state2_start>
+  <case_state3_start><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>143</LINE></case_state3_start>
+  <case_state4_start><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>145</LINE></case_state4_start>
+  <case_state5_start><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>147</LINE></case_state5_start>
+  <case_state6_start><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>149</LINE></case_state6_start>
+  <case_state7_start><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>151</LINE></case_state7_start>
+  <irq_reset><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>161</LINE></irq_reset>
+  <current_pc_reset><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>167</LINE></current_pc_reset>
+  <case_reset_state0><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>180</LINE></case_reset_state0>
+  <exit_irq_reset><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>197</LINE></exit_irq_reset>
+  <case_reset_state1><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>182</LINE></case_reset_state1>
+  <case_reset_state2><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>184</LINE></case_reset_state2>
+  <case_reset_state3><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>186</LINE></case_reset_state3>
+  <case_reset_state4><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>188</LINE></case_reset_state4>
+  <case_reset_state5><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>190</LINE></case_reset_state5>
+  <case_reset_state6><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>192</LINE></case_reset_state6>
+  <case_reset_state7><FILE>C:\Users\vinic\Desktop\DigitalClock\DigitalClock\DigitalClock\main.asm</FILE><LINE>194</LINE></case_reset_state7>
  </LABELS>
 </ASSEMBLER_INFO>
