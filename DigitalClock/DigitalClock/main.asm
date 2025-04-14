@@ -7,9 +7,12 @@
 
 
 ;Definições de clock
-.equ DISPLAY_DELAY = 5 ; ms
-.equ TIMER_PRESCALE = 64 
-.equ TIMER_COMPARE = (16000000/64/1000)*DISPLAY_DELAY ; Valor para comparar
+#define CLOCK 16.0e6
+.equ TIMER_PERIOD_SECONDS= 1; Seconds
+.equ TIMER_PRESCALE = 256
+.equ PRESCALE_TCCR1B = 0b100
+.equ WGM_TCCR1B = 0b0100
+.equ TIMER_TOP = int(((CLOCK/TIMER_PRESCALE) * TIMER_PERIOD_SECONDS)); Valor para comparar 
 .dseg 
 .org SRAM_START
 current_digit: .byte 1
@@ -22,9 +25,10 @@ contador_timer: .byte 2
 
 .cseg
 .org 0x0000
-		rjmp reset
+		jmp reset
 .org OVF1addr
-	rjmp TIMER1_OVF_ISR
+	jmp TIMER1_OVF_ISR ; minutos
+
 
 STATE_TABLE: ;Armazena o local em que os estados estão alocados
     .dw  TEMPO_INC, PRE_TWO ,CRON_RUN
@@ -40,8 +44,9 @@ DIGITS_TABLE: ;Armazena os caracteres 0-9 em forma binaria
 
 .def current_state = r16
 .def temp = r17
-.def stack_reg = r18
-.def mosfet = r19
+.def temp2 = r18
+.def temp3 = r19
+.def minute_acumulator = r20
 ;Utilizamos isto aqui para comparar em qual estado se encontra o current_state
 
 .equ state0 = 0   ; MODO 1 – Relógio (contagem normal de tempo MM:SS)
@@ -60,174 +65,137 @@ DIGITS_TABLE: ;Armazena os caracteres 0-9 em forma binaria
 
 reset:
 	;Inicialização de stack
-	ldi stack_reg, low(RAMEND)
-	out SPL, stack_reg
-	ldi stack_reg, high(RAMEND)
-	out SPH, stack_reg
-	;Definindo o estado atual para o primeiro estado na tabela
-	ldi current_state, state0
+	ldi temp2, low(RAMEND)
+	out SPL, temp2
+	ldi temp2, high(RAMEND)
+	out SPH, temp2
+	
 	ser temp
-	out DDRD, temp ; seta a porta C como saida dos displays
+	out DDRD, temp ; seta a porta D como saida dos displays
 	ldi temp, 0x0F ;seta os 4 primeiros pinos da porta B como saida de controle 
 	out DDRB, temp
 	
 	;Inicialização das variaveis
 	ldi temp, 1
 	sts hora_dezena, temp
-	ldi temp, 3
 	sts hora_unidade, temp
+	ldi temp, 2
 	sts minuto_dezena, temp
-	clr temp
 	sts minuto_unidade, temp
+	clr temp
 	sts display_atual, temp
 	sts contador_timer, temp
 	sts contador_timer+1, temp
 
-	; Configurar timer 1 para interrupção por overflow 
 
-	sei ; Habilitar interrupções
-	call transition ;Pula direto para o estado de transição
 
-main:
-	rjmp main
-
-setup_timer:
-    ldi temp, high(TIMER_COMPARE)
+	; Configura Timer1 para overflow em 1 segundo
+	
+    ldi temp, HIGH(TIMER_TOP) 
 	sts OCR1AH, temp
-	ldi temp, low(TIMER_COMPARE)
+	ldi temp, LOW(TIMER_TOP)
 	sts OCR1AL, temp
+	ldi temp, ((WGM_TCCR1B&0b11) << WGM10) 
+	sts TCCR1A, temp
+	ldi temp, ((WGM_TCCR1B>> 2) << WGM12)|(PRESCALE_TCCR1B << CS10)
+	sts TCCR1B, temp  ; Inicia o timer
 
-	ldi temp, (1<<WGM12)| (1<<CS11)|(1<<CS10) ; AJuste do ctc para um prescale de 64
-	sts TCCR1B, temp
-	ldi temp, (1<<OCIE1A) ; interrupcao por comparacao
-	sts TIMSK1, temp
-	ret
+	
+	
 
+
+	; Definindo o estado atual para o primeiro estado na tabela
+	ldi current_state, state0
+	sei ; Habilitar interrupções
+	call transition ; Pula direto para o estado de transição
 
 ; --- Timer1 interrupt handler ---
 TIMER1_OVF_ISR:
-    push temp
-    push stack_reg
-	push mosfet
-	in temp, sreg
+    inc minute_acumulator
+	cpi minute_acumulator, 60
+	breq MINUTE_ISR
+	cpi current_state, state0
+	breq HANDLE_MODE1_SECOND
+	;Implementar a logica do modo 2 e 3 aqui
+	HANDLE_MODE1_SECOND:
+		push temp
+		push temp2
+		in temp, DDRB
+		ldi temp2, 0x01
+		eor temp, temp2
+		out DDRB, temp
+		pop temp2
+		pop temp
+	
+	
+	EXIT_TIMER1_ISR:
+		reti
+
+MINUTE_ISR:
+	clr minute_acumulator
+	cpi current_state, state0
+	brne EXIT_MINUTE_ISR
+	call INCREMENT_DIGIT_0
+	EXIT_MINUTE_ISR:
+		reti
+INCREMENT_DIGIT_0:
 	push temp
-
-	lds temp, display_atual
-
-	lds stack_reg, 0x0F
-	out PORTB, stack_reg
-
-	cpi temp, 0
-	breq mostrar_hora_dezena
-	cpi temp, 1
-	breq mostrar_hora_unidade
-	cpi temp, 2
-	breq mostrar_minuto_dezena
-	cpi temp, 3
-	breq mostrar_minuto_unidade
-
-	mostrar_hora_dezena:
-		lds stack_reg, hora_dezena
-		rjmp show_digits
-	mostrar_hora_unidade:
-		lds stack_reg, hora_unidade
-		rjmp show_digits
-	mostrar_minuto_dezena:
-		lds stack_reg, minuto_dezena
-		rjmp show_digits
-	mostrar_minuto_unidade:
-		lds stack_reg, minuto_unidade
-		
-	show_digits:
-		ldi ZL, low(DIGITS_TABLE<<1)
-		ldi ZH, high(DIGITS_TABLE<<1)
-		add ZL, stack_reg
-		lpm temp, Z
-
-		out PORTD, temp
-
-		ldi stack_reg, 0x0F
-		com temp
-		and stack_reg, temp
-		out PORTB, stack_reg
-
-		lds temp, display_atual
-		inc temp
-		cpi temp, 4
-		brne save_actual_display
-		ldi temp, 0
-		save_actual_display:
-			sts display_atual, temp
-
-		lds temp, contador_timer
-		lds stack_reg, contador_timer+1
-		inc stack_reg
-		inc temp
-		cpi temp, low(200)
-		ldi mosfet, high(200)
-		cpc stack_reg, mosfet
-		brne end_timerISR
-		clr temp
-		clr stack_reg
-		clr mosfet
-		rcall atualiza_tempo
-		end_timerISR:
-			sts contador_timer, temp
-			sts contador_timer+1, stack_reg
-			pop temp
-			out sreg, temp
-			pop mosfet
-			pop stack_reg
-			pop temp
-			reti
-
-atualiza_tempo:
-	push temp
-	push stack_reg
-
 	lds temp, minuto_unidade
 	inc temp
 	cpi temp, 10
-	brne salva_minuto_unidade
-	clr temp
-	lds stack_reg, minuto_dezena
-	inc stack_reg
-	cpi stack_reg, 6
-	brne salva_minuto_dezena
+	breq INCREMENT_DIGIT_1
+	sts minuto_unidade, temp
+	pop temp
+	reti
 
-	clr stack_reg
+INCREMENT_DIGIT_1:
+	clr temp
+	sts minuto_unidade, temp
+	lds temp, minuto_dezena
+	inc temp
+	cpi temp, 6
+	breq INCREMENT_DIGIT_2
+	sts minuto_dezena, temp
+	pop temp
+	reti
+INCREMENT_DIGIT_2:
+	clr temp
+	sts minuto_dezena, temp
 	lds temp, hora_unidade
 	inc temp
+	cpi temp, 4
+	breq VERIFY_24H
 	cpi temp, 10
-	brne salva_hora_unidade
-
-	clr temp
-	lds stack_reg, hora_dezena
-	inc stack_reg
-	cpi stack_reg, 3
-	brne salva_hora_dezena
-
-	clr temp
-	clr stack_reg
-	sts hora_dezena, temp
+	breq INCREMENT_DIGIT_3
 	sts hora_unidade, temp
-	rjmp fim_atualizacao
-			
-	salva_hora_dezena:
-		sts hora_dezena, stack_reg
-		rjmp fim_atualizacao
-	salva_hora_unidade:
+	pop temp
+	reti
+VERIFY_24H:
+	lds temp, hora_dezena
+	cpi temp, 2
+	brne EXIT_VERIFY_24H
+	clr temp
+	sts minuto_unidade, temp
+	sts minuto_dezena, temp
+	sts hora_unidade, temp
+	sts hora_dezena, temp
+	pop temp
+	reti
+	EXIT_VERIFY_24H:
+		ldi temp, 4
 		sts hora_unidade, temp
-		rjmp fim_atualizacao
-	salva_minuto_dezena:
-		sts minuto_dezena, stack_reg
-		rjmp salva_minuto_unidade
-	salva_minuto_unidade:
-		sts minuto_unidade, temp
-	fim_atualizacao:
-		pop stack_reg
 		pop temp
-		ret
+		reti
+	
+INCREMENT_DIGIT_3:
+	push temp
+	lds temp, hora_dezena
+	inc temp
+	sts hora_dezena, temp 
+	pop temp
+	reti
+
+
 
 MODE_ISR:
 	push temp
@@ -355,17 +323,16 @@ current_pc_reset:
 		pop temp
 		reti
 
-;Sempre utilizar o sts current_digit, r16 para pegar o valor do digito atual
 update_display:
-	ldi ZL, low(DIGITS_TABLE << 1)  
-    ldi ZH, high(DIGITS_TABLE << 1)
-    lds r16, current_digit
-    add ZL, r16                  ; Add offset 
-    clr r17
-    adc ZH, r17                  
-    lpm r16, Z                   
-    out PORTC, r16               ; Envia para o display
-    ret
+ 	ldi ZL, low(DIGITS_TABLE << 1)  
+     ldi ZH, high(DIGITS_TABLE << 1)
+     lds r16, current_digit
+     add ZL, r16                  ; Add offset 
+     clr r17
+     adc ZH, r17                  
+     lpm r16, Z                   
+     out PORTC, r16               ; Envia para o display
+     ret
 
 
 transition:
@@ -387,7 +354,6 @@ transition:
 TEMPO_INC:
     cpi current_state, state0
     brne transition ; se NÃO for o estado 0, pula pra transition
-	call setup_timer
 	call tempo_inc_loop
 	tempo_inc_loop:
 		nop
@@ -410,7 +376,6 @@ PRE_TWO:
 CRON_RUN:
     cpi current_state, state2
     brne transition 
-	call setup_timer;Faz as definições de timer
 	; lógica
 
     rjmp cron_run_timer_loop
@@ -443,7 +408,7 @@ PRE_THREE:
 
     ldi current_state, state5
     sei
-    rjmp main
+    rjmp PRE_THREE
 
 ;-----------------------------------MODO 3 DISPLAY SELECIONADO PISCANDO----------------------------
 BLINK:
@@ -464,7 +429,7 @@ MOV_SELECT:
 
     ldi current_state, state5
     sei
-    rjmp main
+    rjmp MOV_SELECT
 
 ;----------------------------------------------- MODO 3 MUDA O VALOR NO DISPLAY SELECIONADO-------------------------------
 SELECT_INC:
@@ -475,7 +440,7 @@ SELECT_INC:
 
     ldi current_state, state5
     sei
-    rjmp main
+    rjmp SELECT_INC
 
 
 ;----------------------------------- FUNC PARA INCREMENTAR TIMER --------------------------------------
